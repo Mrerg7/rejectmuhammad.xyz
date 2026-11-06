@@ -76,7 +76,7 @@ nav a[aria-current="page"], nav a:hover { color: var(--fg); }
   color: var(--fg) !important;
 }
 .hero { border-bottom: 1px solid var(--line); padding: 3rem 0 3.5rem; }
-.hero-stage { margin: 0; padding: 0; background: #000000; border-bottom: 1px solid var(--line); }
+.hero-stage { margin: 0; padding: 0; background: var(--bg); border-bottom: 1px solid var(--line); }
 .hero-stage img {
   display: block;
   width: min(100%, calc(88vh * 832 / 1248));
