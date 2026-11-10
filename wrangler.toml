@@ -1,7 +1,8 @@
 name = "rejectmuhammad-xyz"
 main = "src/worker.ts"
 compatibility_date = "2026-11-05"
-workers_dev = true
+# Keep workers.dev off the public index surface; Worker still 301s *.workers.dev → apex.
+workers_dev = false
 
 [assets]
 directory = "./dist"
