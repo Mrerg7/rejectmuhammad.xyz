@@ -23,35 +23,39 @@ function normalizePathname(pathname: string): string {
 
 function getCanonicalRedirect(request: Request): string | null {
   const url = new URL(request.url);
-  const canonical = new URL(url.pathname + url.search, CANONICAL_ORIGIN);
   let needsRedirect = false;
 
   if (url.protocol === "http:" || isAlternateHost(url.hostname)) {
     needsRedirect = true;
   }
 
-  const normalizedPath = normalizePathname(canonical.pathname);
-  if (normalizedPath !== canonical.pathname) {
-    canonical.pathname = normalizedPath;
+  // Normalize before building a URL — `new URL("///", origin)` throws Invalid URL.
+  let pathname = normalizePathname(url.pathname);
+  if (pathname !== url.pathname) {
     needsRedirect = true;
   }
 
-  if (canonical.pathname === "/index.html" || canonical.pathname === "/index.html/") {
-    canonical.pathname = "/";
+  if (pathname === "/index.html" || pathname === "/index.html/") {
+    pathname = "/";
     needsRedirect = true;
   }
 
   if (
-    !NOT_FOUND_PATHS.has(canonical.pathname) &&
-    canonical.pathname !== "/" &&
-    !canonical.pathname.endsWith("/") &&
-    !/\.\w+$/.test(canonical.pathname)
+    !NOT_FOUND_PATHS.has(pathname) &&
+    pathname !== "/" &&
+    !pathname.endsWith("/") &&
+    !/\.\w+$/.test(pathname)
   ) {
-    canonical.pathname += "/";
+    pathname += "/";
     needsRedirect = true;
   }
 
-  return needsRedirect ? canonical.toString() : null;
+  if (!needsRedirect) return null;
+
+  const canonical = new URL(CANONICAL_ORIGIN);
+  canonical.pathname = pathname;
+  canonical.search = url.search;
+  return canonical.toString();
 }
 
 async function notFoundResponse(request: Request, env: Env): Promise<Response> {
@@ -87,12 +91,13 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
       const url = new URL(request.url);
+      const path = normalizePathname(url.pathname);
 
-      if (url.pathname === "/sitemap.xml" || url.pathname === "/sitemap.xml/") {
+      if (path === "/sitemap.xml" || path === "/sitemap.xml/") {
         return env.ASSETS.fetch(new Request(new URL("/sitemap-index.xml", url.origin), request));
       }
 
-      if (NOT_FOUND_PATHS.has(url.pathname)) {
+      if (NOT_FOUND_PATHS.has(path) || NOT_FOUND_PATHS.has(url.pathname)) {
         return notFoundResponse(request, env);
       }
 
